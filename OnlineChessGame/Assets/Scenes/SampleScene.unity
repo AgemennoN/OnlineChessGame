@@ -153,7 +153,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileMaterial: {fileID: 2100000, guid: d18d8666a4680a9418c4f9255da02d14, type: 2}
-  tileSize: 1
 --- !u!4 &641768386
 Transform:
   m_ObjectHideFlags: 0
