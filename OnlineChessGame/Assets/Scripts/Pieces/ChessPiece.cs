@@ -21,6 +21,11 @@ public class ChessPiece : MonoBehaviour
     private Vector3 desiredPosition;
     private Vector3 desiredScale = Vector3.one;
 
+    private void Start()
+    {
+        transform.localRotation = Quaternion.Euler((team == 0) ? Vector3.zero : new Vector3(0, 0, 180));
+    }
+
     private void Update()
     {
         transform.position = Vector3.Lerp(transform.position, desiredPosition, Time.deltaTime * 10);
