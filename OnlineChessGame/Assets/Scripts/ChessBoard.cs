@@ -34,9 +34,11 @@ public class ChessBoard : MonoBehaviour
     private Vector2Int currentHover;
     private Vector3 bounds;
     private ChessPiece currentlyDragging;
+    private bool isWhiteTurn;
 
     private void Awake()
     {
+        isWhiteTurn = true;
         GenerateChessBoard(tileSize, TILE_COUNT_X, TILE_COUNT_Y);
 
         SpawnAllPieces();
@@ -76,10 +78,11 @@ public class ChessBoard : MonoBehaviour
 
             if (Input.GetMouseButtonDown(0))
             {
-                // If is it your turn
-                if (true)
+                if (chessPieces[hitPosition.x, hitPosition.y] != null)
                 {
-                    if (chessPieces[hitPosition.x, hitPosition.y] != null)
+                    // If is it your turn
+                    int teamTurn = isWhiteTurn ? 0 : 1;
+                    if (chessPieces[hitPosition.x, hitPosition.y].team == teamTurn)
                     {
                         currentlyDragging = chessPieces[hitPosition.x, hitPosition.y];
 
@@ -297,7 +300,8 @@ public class ChessBoard : MonoBehaviour
         chessPieces[previousPosition.x, previousPosition.y] = null;
 
         PositionSinglePiece(x, y);
-        
+        isWhiteTurn = !isWhiteTurn;
+
         return true;
     }
     private Vector2Int ReturnTileIndex(GameObject hitInfo)
