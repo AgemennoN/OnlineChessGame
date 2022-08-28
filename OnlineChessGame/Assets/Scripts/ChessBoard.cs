@@ -2,6 +2,13 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum TSpecialMove{
+    None = 0,
+    EnPassant,
+    Castling,
+    Promotion
+}
+
 public class ChessBoard : MonoBehaviour
 {
     //  ART
@@ -33,6 +40,8 @@ public class ChessBoard : MonoBehaviour
     private List<Vector2Int> availableMoves = new List<Vector2Int>();
     private List<ChessPiece> deadWhites = new List<ChessPiece>();
     private List<ChessPiece> deadBlacks = new List<ChessPiece>();
+    private List<Vector2Int[]> moveList = new List<Vector2Int[]>();
+    private TSpecialMove specialMove;
     private Camera currentCamera;
     private Vector2Int currentHover;
     private Vector3 bounds;
@@ -90,6 +99,9 @@ public class ChessBoard : MonoBehaviour
                         currentlyDragging = chessPieces[hitPosition.x, hitPosition.y];
 
                         availableMoves = currentlyDragging.GetAvailableMoves(ref chessPieces, TILE_COUNT_X, TILE_COUNT_Y);
+
+                        specialMove = currentlyDragging.GetSpacialMove(ref chessPieces, ref moveList, ref availableMoves);
+
                         HighlightTiles();
                     }
                 }
@@ -136,7 +148,6 @@ public class ChessBoard : MonoBehaviour
         }
 
     }
-
 
 
     // Generate the Board 
@@ -285,7 +296,8 @@ public class ChessBoard : MonoBehaviour
 
         // Clear Variables
         currentlyDragging = null;
-        availableMoves = new List<Vector2Int>();
+        availableMoves.Clear();
+        moveList.Clear();
 
         // Restart the Game
         SpawnAllPieces();
@@ -297,11 +309,33 @@ public class ChessBoard : MonoBehaviour
         Application.Quit();
     }
 
+    // Special Move
+    private void SpecialMoveProcesser()
+    {
+        if (specialMove == TSpecialMove.EnPassant)
+        {
+            Vector2Int[] allyPawnMove = moveList[moveList.Count - 1];
+            Vector2Int[] enemyPawnMove = moveList[moveList.Count - 2];
 
+            if (allyPawnMove[1].x == enemyPawnMove[1].x)
+            {
+                Debug.Log("Same X");
+                if (Mathf.Abs(allyPawnMove[1].y - enemyPawnMove[1].y) == 1)
+                {
+                    Debug.Log("Mathf.Abs(allyPawnMove[1].y - enemyPawnMove[1].y) == 1");
+
+                    KillPiece(chessPieces[enemyPawnMove[1].x, enemyPawnMove[1].y]);
+                }
+            }
+        }
+
+        // elseif castle or promotion
+
+    }
 
 
     // Operations
-    private bool ContainsValidMove(ref List<Vector2Int> moves, Vector2 pos)
+    private bool ContainsValidMove(ref List<Vector2Int> moves, Vector2Int pos)
     {
         for (int i = 0; i < moves.Count; i++)
             if (moves[i].x == pos.x && moves[i].y == pos.y)
@@ -309,7 +343,6 @@ public class ChessBoard : MonoBehaviour
 
         return false;
     } 
-
     private void HighlightTiles()
     {
         for (int i = 0; i < availableMoves.Count; i++)
@@ -322,7 +355,6 @@ public class ChessBoard : MonoBehaviour
         
         availableMoves.Clear();
     }
-
     private bool MoveTo(ChessPiece cp, int x, int y)
     {
         if (ContainsValidMove(ref availableMoves, new Vector2Int(x, y)) == false)
@@ -330,40 +362,24 @@ public class ChessBoard : MonoBehaviour
         
         Vector2Int previousPosition = new Vector2Int(cp.currentX, cp.currentY);
 
+        // If there is a piece on the tile
         if (chessPieces[x, y] != null)
         {
             ChessPiece ocp = chessPieces[x, y];
 
-            if (cp.team == ocp.team)
-            {
+            if (cp.team == ocp.team)    // If not enemy can't it is an invalid Move
                 return false;
-            }
-            else if(ocp.team == 0)
-            {
-                if (ocp.type == TChessPiece.King)
-                    CheckMate(1);
-                
-                    deadWhites.Add(ocp);
-                ocp.SetScale(Vector3.one * deathSize);
-                ocp.SetPosition(GetCenterOfTile(8, -1) +
-                    new Vector3(0, 0, deadWhites.Count * deathSpacing));
-            }
-            else
-            {
-                if (ocp.type == TChessPiece.King)
-                    CheckMate(0);
-
-                deadBlacks.Add(ocp);
-                ocp.SetScale(Vector3.one * deathSize);
-                ocp.SetPosition(GetCenterOfTile(-1, 8) -
-                    new Vector3(0, 0, deadBlacks.Count * deathSpacing));
-            }
+            else                        // If an enemy piece kill
+                KillPiece(ocp);
         }
 
         chessPieces[x, y] = cp;
         chessPieces[previousPosition.x, previousPosition.y] = null;
 
+        moveList.Add(new Vector2Int[] { previousPosition, new Vector2Int(x, y) });
         PositionSinglePiece(x, y);
+        SpecialMoveProcesser();
+
         isWhiteTurn = !isWhiteTurn;
 
         return true;
@@ -376,5 +392,28 @@ public class ChessBoard : MonoBehaviour
                     return new Vector2Int(x, y);
 
         return -Vector2Int.one;
+    }
+    private void KillPiece(ChessPiece cp)
+    {
+        if (cp.team == 0)      // Defeated piece is White
+        {
+            if (cp.type == TChessPiece.King)
+                CheckMate(1);
+
+            deadWhites.Add(cp);
+            cp.SetScale(Vector3.one * deathSize);
+            cp.SetPosition(GetCenterOfTile(8, -1) +
+                new Vector3(0, 0, deadWhites.Count * deathSpacing));
+        }
+        else                   // Defeated piece is Black
+        {
+            if (cp.type == TChessPiece.King)
+                CheckMate(0);
+
+            deadBlacks.Add(cp);
+            cp.SetScale(Vector3.one * deathSize);
+            cp.SetPosition(GetCenterOfTile(-1, 8) -
+                new Vector3(0, 0, deadBlacks.Count * deathSpacing));
+        }
     }
 }

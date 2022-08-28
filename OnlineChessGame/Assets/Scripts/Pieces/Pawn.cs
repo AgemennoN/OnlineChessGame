@@ -38,4 +38,35 @@ public class Pawn : ChessPiece
 
         return r;
     }
+
+    public override TSpecialMove GetSpacialMove(ref ChessPiece[,] board, ref List<Vector2Int[]> moveList, ref List<Vector2Int> availableMoves)
+    {
+        int direction = (team == 0) ? 1 : -1;
+
+        // EnPassant
+        if (moveList.Count > 0)
+        {
+            Vector2Int[] lastMove = moveList[moveList.Count - 1];
+            
+            if (board[lastMove[1].x, lastMove[1].y].type == TChessPiece.Pawn) // If the last move belongs to a pawn
+            {
+                if (Mathf.Abs(lastMove[1].y - lastMove[0].y) == 2) // If the pawn move was a double front
+                {
+                    if (lastMove[1].y == currentY) // If this pawn and the enemy pawn are on the same y tiles
+                    {
+                        if (lastMove[1].x - 1 == currentX || lastMove[1].x + 1 == currentX) // If the pawns are near each others 
+                        {
+                            availableMoves.Add(new Vector2Int(lastMove[1].x, lastMove[1].y + direction));
+                            return TSpecialMove.EnPassant;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Promotion
+
+        return TSpecialMove.None;
+    }
+
 }

@@ -61,4 +61,9 @@ public class ChessPiece : MonoBehaviour
         return r;
     }
 
+    public virtual TSpecialMove GetSpacialMove(ref ChessPiece[,] board, ref List<Vector2Int[]> moveList, ref List<Vector2Int> availableMoves)
+    {
+        return TSpecialMove.None;
+    }
+
 }
