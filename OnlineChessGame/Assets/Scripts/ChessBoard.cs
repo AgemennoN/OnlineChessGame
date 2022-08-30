@@ -199,27 +199,27 @@ public class ChessBoard : MonoBehaviour
 
         // White Pieces
         chessPieces[0, 0] = SpawnSinglePiece(TChessPiece.Rook, whiteTeam);
-        chessPieces[1, 0] = SpawnSinglePiece(TChessPiece.Knight, whiteTeam);
-        chessPieces[2, 0] = SpawnSinglePiece(TChessPiece.Bishop, whiteTeam);
-        chessPieces[3, 0] = SpawnSinglePiece(TChessPiece.Queen, whiteTeam);
-        chessPieces[4, 0] = SpawnSinglePiece(TChessPiece.King, whiteTeam);
-        chessPieces[5, 0] = SpawnSinglePiece(TChessPiece.Bishop, whiteTeam);
-        chessPieces[6, 0] = SpawnSinglePiece(TChessPiece.Knight, whiteTeam);
-        chessPieces[7, 0] = SpawnSinglePiece(TChessPiece.Rook, whiteTeam);
-        for (int x = 0; x < TILE_COUNT_X; x++)
-            chessPieces[x, 1] = SpawnSinglePiece(TChessPiece.Pawn, whiteTeam);
-
-        // Black Pieces
-        chessPieces[0, 7] = SpawnSinglePiece(TChessPiece.Rook, blackTeam);
-        chessPieces[1, 7] = SpawnSinglePiece(TChessPiece.Knight, blackTeam);
-        chessPieces[2, 7] = SpawnSinglePiece(TChessPiece.Bishop, blackTeam);
-        chessPieces[3, 7] = SpawnSinglePiece(TChessPiece.Queen, blackTeam);
-        chessPieces[4, 7] = SpawnSinglePiece(TChessPiece.King, blackTeam);
-        chessPieces[5, 7] = SpawnSinglePiece(TChessPiece.Bishop, blackTeam);
-        chessPieces[6, 7] = SpawnSinglePiece(TChessPiece.Knight, blackTeam);
-        chessPieces[7, 7] = SpawnSinglePiece(TChessPiece.Rook, blackTeam);
-        for (int x = 0; x < TILE_COUNT_X; x++)
-            chessPieces[x, 6] = SpawnSinglePiece(TChessPiece.Pawn, blackTeam);
+      // chessPieces[1, 0] = SpawnSinglePiece(TChessPiece.Knight, whiteTeam);
+      // chessPieces[2, 0] = SpawnSinglePiece(TChessPiece.Bishop, whiteTeam);
+      // chessPieces[3, 0] = SpawnSinglePiece(TChessPiece.Queen, whiteTeam);
+       chessPieces[4, 0] = SpawnSinglePiece(TChessPiece.King, whiteTeam);
+      // chessPieces[5, 0] = SpawnSinglePiece(TChessPiece.Bishop, whiteTeam);
+      // chessPieces[6, 0] = SpawnSinglePiece(TChessPiece.Knight, whiteTeam);
+       chessPieces[7, 0] = SpawnSinglePiece(TChessPiece.Rook, whiteTeam);
+      // for (int x = 0; x < TILE_COUNT_X; x++)
+      //     chessPieces[x, 1] = SpawnSinglePiece(TChessPiece.Pawn, whiteTeam);
+      //
+      // // Black Pieces
+       chessPieces[0, 7] = SpawnSinglePiece(TChessPiece.Rook, blackTeam);
+      // chessPieces[1, 7] = SpawnSinglePiece(TChessPiece.Knight, blackTeam);
+      // chessPieces[2, 7] = SpawnSinglePiece(TChessPiece.Bishop, blackTeam);
+      // chessPieces[3, 7] = SpawnSinglePiece(TChessPiece.Queen, blackTeam);
+       chessPieces[4, 7] = SpawnSinglePiece(TChessPiece.King, blackTeam);
+      // chessPieces[5, 7] = SpawnSinglePiece(TChessPiece.Bishop, blackTeam);
+      // chessPieces[6, 7] = SpawnSinglePiece(TChessPiece.Knight, blackTeam);
+       chessPieces[7, 7] = SpawnSinglePiece(TChessPiece.Rook, blackTeam);
+      // for (int x = 0; x < TILE_COUNT_X; x++)
+      //     chessPieces[x, 6] = SpawnSinglePiece(TChessPiece.Pawn, blackTeam);
     }
     private ChessPiece SpawnSinglePiece(TChessPiece type, int team)
     {
@@ -344,7 +344,27 @@ public class ChessBoard : MonoBehaviour
             }
         }
 
-        // elseif castle or promotion
+        if (specialMove == TSpecialMove.Castling)
+        {
+            Vector2Int[] lastMove = moveList[moveList.Count - 1];
+
+            // Left Castling
+            if (lastMove[1].x == 2)
+            {
+                ChessPiece leftRook = chessPieces[0, lastMove[1].y];
+                chessPieces[0, lastMove[1].y] = null;
+                chessPieces[3, lastMove[1].y] = leftRook;
+                PositionSinglePiece(3, lastMove[1].y);
+            }
+            // Right Castling
+            if (lastMove[1].x == 6)
+            {
+                ChessPiece rightRook = chessPieces[7, lastMove[1].y];
+                chessPieces[7, lastMove[1].y] = null;
+                chessPieces[5, lastMove[1].y] = rightRook;
+                PositionSinglePiece(5, lastMove[1].y);
+            }
+        }
 
     }
 

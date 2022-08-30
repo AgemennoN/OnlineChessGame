@@ -43,4 +43,37 @@ public class King : ChessPiece
         }
         return r;
     }
+
+    public override TSpecialMove GetSpacialMove(ref ChessPiece[,] board, ref List<Vector2Int[]> moveList, ref List<Vector2Int> availableMoves)
+    {
+        TSpecialMove r = TSpecialMove.None;
+
+        Vector2Int[] kingMove = moveList.Find(m => m[0].x == 4 && m[0].y == ((team == 0) ? 0 : 7));
+        Vector2Int[] leftRookMove = moveList.Find(m => m[0].x == 0 && m[0].y == ((team == 0) ? 0 : 7));
+        Vector2Int[] rightRookMove = moveList.Find(m => m[0].x == 7 && m[0].y == ((team == 0) ? 0 : 7));
+
+        if (kingMove == null)
+        {
+            // Left Castle Move
+            if (leftRookMove == null)
+                if (board[0, currentY].type == TChessPiece.Rook && board[0, currentY].team == team)
+                    if (board[3, currentY] == null)
+                        if (board[2, currentY] == null)
+                            if (board[1, currentY] == null)
+                            {
+                                availableMoves.Add(new Vector2Int(2, currentY));
+                                r = TSpecialMove.Castling;
+                            }
+            // Right Castle Move
+            if (rightRookMove == null)
+                if (board[7, currentY].type == TChessPiece.Rook && board[7, currentY].team == team)
+                    if (board[5, currentY] == null)
+                        if (board[6, currentY] == null)
+                        {
+                            availableMoves.Add(new Vector2Int(6, currentY));
+                            r = TSpecialMove.Castling;
+                        }
+        }
+        return r;
+    }
 }

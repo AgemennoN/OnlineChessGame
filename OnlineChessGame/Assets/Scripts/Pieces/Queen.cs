@@ -49,4 +49,5 @@ public class Queen : ChessPiece
         }
         return r;
     }
+
 }
