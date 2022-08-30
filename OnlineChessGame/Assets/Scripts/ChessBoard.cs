@@ -333,7 +333,6 @@ public class ChessBoard : MonoBehaviour
         }
         SimulateMoveForSinglePiece(currentlyDragging, ref availableMoves, king);
     }
-
     private void SimulateMoveForSinglePiece(ChessPiece cp, ref List<Vector2Int> moves, ChessPiece targetKing)
     {
         // Save current Positions and initialize variables
@@ -400,7 +399,70 @@ public class ChessBoard : MonoBehaviour
         }
 
     }
+    private bool CheckForCheckMate()
+    {
+        Vector2Int[] lastMove = moveList[moveList.Count - 1];
+        ChessPiece targetKing = null;
 
+        List<ChessPiece> defendingPieces = new List<ChessPiece>();
+        List<ChessPiece> attackingPieces = new List<ChessPiece>();
+        for (int x = 0; x < TILE_COUNT_X; x++)
+        {
+            for (int y = 0; y < TILE_COUNT_Y; y++)
+            {
+                if (chessPieces[x, y] != null)
+                {
+                    if (chessPieces[x, y].team != currentlyDragging.team)
+                    {
+                        defendingPieces.Add(chessPieces[x, y]);
+                        // Find the Defending King
+                        if (chessPieces[x, y].type == TChessPiece.King)
+                        {
+                            targetKing = chessPieces[x, y];
+                        }
+                    }
+                    else
+                    {
+                        attackingPieces.Add(chessPieces[x, y]);
+                    }
+                }
+            }
+        }
+
+        bool isKingAtRisk = false;
+        // Is the king attacked right now
+        foreach (ChessPiece attPiece in attackingPieces)
+        {
+            List<Vector2Int> attackingAvailableMoves = attPiece.GetAvailableMoves(ref chessPieces, TILE_COUNT_X, TILE_COUNT_Y);
+            if (attackingAvailableMoves.Contains(new Vector2Int(targetKing.currentX, targetKing.currentY)))
+            {
+                isKingAtRisk = true;
+                break;
+            }
+        }
+
+        if (isKingAtRisk == true) // If king is at risk check for available moves
+        {
+            foreach (ChessPiece defPiece in defendingPieces)
+            {
+                List<Vector2Int> defendingAvailableMoves = defPiece.GetAvailableMoves(ref chessPieces, TILE_COUNT_X, TILE_COUNT_Y);
+
+                SimulateMoveForSinglePiece(defPiece, ref defendingAvailableMoves, targetKing);
+
+                if (defendingAvailableMoves.Count > 0)  // If there is available Moves for defending team Not CheckMate
+                {
+                    return false;
+                }
+            }
+        }
+        else if (isKingAtRisk == false)   // Not CheckMate
+        {
+            return false;
+        }
+
+        return true;
+    }
+    
     // Special Move
     private void SpecialMoveProcesser()
     {
@@ -507,6 +569,9 @@ public class ChessBoard : MonoBehaviour
         PositionSinglePiece(x, y);
         SpecialMoveProcesser();
 
+        if (CheckForCheckMate())
+            CheckMate(cp.team);
+
         isWhiteTurn = !isWhiteTurn;
 
         return true;
@@ -524,9 +589,6 @@ public class ChessBoard : MonoBehaviour
     {
         if (cp.team == 0)      // Defeated piece is White
         {
-            if (cp.type == TChessPiece.King)
-                CheckMate(1);
-
             deadWhites.Add(cp);
             cp.SetScale(Vector3.one * deathSize);
             cp.SetPosition(GetCenterOfTile(8, -1) +
@@ -534,9 +596,6 @@ public class ChessBoard : MonoBehaviour
         }
         else                   // Defeated piece is Black
         {
-            if (cp.type == TChessPiece.King)
-                CheckMate(0);
-
             deadBlacks.Add(cp);
             cp.SetScale(Vector3.one * deathSize);
             cp.SetPosition(GetCenterOfTile(-1, 8) -
