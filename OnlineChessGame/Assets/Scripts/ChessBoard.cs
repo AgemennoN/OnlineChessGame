@@ -312,6 +312,21 @@ public class ChessBoard : MonoBehaviour
     // Special Move
     private void SpecialMoveProcesser()
     {
+        if (specialMove == TSpecialMove.Promotion)
+        {
+            Vector2Int[] lastMove = moveList[moveList.Count - 1];
+            if (lastMove[1].y == 0 || lastMove[1].y == 7)
+            {
+                ChessPiece thePawn = chessPieces[lastMove[1].x, lastMove[1].y];
+                ChessPiece newQueen = SpawnSinglePiece(TChessPiece.Queen, thePawn.team);
+
+                newQueen.transform.position = thePawn.transform.position;
+                Destroy(chessPieces[lastMove[1].x, lastMove[1].y].gameObject);
+                chessPieces[lastMove[1].x, lastMove[1].y] = newQueen;
+                PositionSinglePiece(lastMove[1].x, lastMove[1].y);
+            }
+        }
+        
         if (specialMove == TSpecialMove.EnPassant)
         {
             Vector2Int[] allyPawnMove = moveList[moveList.Count - 1];

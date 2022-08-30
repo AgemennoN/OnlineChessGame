@@ -42,6 +42,13 @@ public class Pawn : ChessPiece
     public override TSpecialMove GetSpacialMove(ref ChessPiece[,] board, ref List<Vector2Int[]> moveList, ref List<Vector2Int> availableMoves)
     {
         int direction = (team == 0) ? 1 : -1;
+        int readyToPromoteTile = (team == 0) ? 6 : 1;
+
+        // Promoting
+        if (currentY == readyToPromoteTile)
+        {
+            return TSpecialMove.Promotion;
+        }
 
         // EnPassant
         if (moveList.Count > 0)
