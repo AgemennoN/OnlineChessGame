@@ -98,9 +98,13 @@ public class ChessBoard : MonoBehaviour
                     {
                         currentlyDragging = chessPieces[hitPosition.x, hitPosition.y];
 
+                        // Gets a list for available moves to highlight 
                         availableMoves = currentlyDragging.GetAvailableMoves(ref chessPieces, TILE_COUNT_X, TILE_COUNT_Y);
-
+                        // Adds special moves to the availableMoves list
                         specialMove = currentlyDragging.GetSpacialMove(ref chessPieces, ref moveList, ref availableMoves);
+
+                        // Remove the moves that make you checked by enemy team from the availableMoves List
+                        PreventCheck();
 
                         HighlightTiles();
                     }
@@ -199,27 +203,27 @@ public class ChessBoard : MonoBehaviour
 
         // White Pieces
         chessPieces[0, 0] = SpawnSinglePiece(TChessPiece.Rook, whiteTeam);
-      // chessPieces[1, 0] = SpawnSinglePiece(TChessPiece.Knight, whiteTeam);
-      // chessPieces[2, 0] = SpawnSinglePiece(TChessPiece.Bishop, whiteTeam);
-      // chessPieces[3, 0] = SpawnSinglePiece(TChessPiece.Queen, whiteTeam);
-       chessPieces[4, 0] = SpawnSinglePiece(TChessPiece.King, whiteTeam);
-      // chessPieces[5, 0] = SpawnSinglePiece(TChessPiece.Bishop, whiteTeam);
-      // chessPieces[6, 0] = SpawnSinglePiece(TChessPiece.Knight, whiteTeam);
-       chessPieces[7, 0] = SpawnSinglePiece(TChessPiece.Rook, whiteTeam);
-      // for (int x = 0; x < TILE_COUNT_X; x++)
-      //     chessPieces[x, 1] = SpawnSinglePiece(TChessPiece.Pawn, whiteTeam);
-      //
-      // // Black Pieces
-       chessPieces[0, 7] = SpawnSinglePiece(TChessPiece.Rook, blackTeam);
-      // chessPieces[1, 7] = SpawnSinglePiece(TChessPiece.Knight, blackTeam);
-      // chessPieces[2, 7] = SpawnSinglePiece(TChessPiece.Bishop, blackTeam);
-      // chessPieces[3, 7] = SpawnSinglePiece(TChessPiece.Queen, blackTeam);
-       chessPieces[4, 7] = SpawnSinglePiece(TChessPiece.King, blackTeam);
-      // chessPieces[5, 7] = SpawnSinglePiece(TChessPiece.Bishop, blackTeam);
-      // chessPieces[6, 7] = SpawnSinglePiece(TChessPiece.Knight, blackTeam);
-       chessPieces[7, 7] = SpawnSinglePiece(TChessPiece.Rook, blackTeam);
-      // for (int x = 0; x < TILE_COUNT_X; x++)
-      //     chessPieces[x, 6] = SpawnSinglePiece(TChessPiece.Pawn, blackTeam);
+        chessPieces[1, 0] = SpawnSinglePiece(TChessPiece.Knight, whiteTeam);
+        chessPieces[2, 0] = SpawnSinglePiece(TChessPiece.Bishop, whiteTeam);
+        chessPieces[3, 0] = SpawnSinglePiece(TChessPiece.Queen, whiteTeam);
+        chessPieces[4, 0] = SpawnSinglePiece(TChessPiece.King, whiteTeam);
+        chessPieces[5, 0] = SpawnSinglePiece(TChessPiece.Bishop, whiteTeam);
+        chessPieces[6, 0] = SpawnSinglePiece(TChessPiece.Knight, whiteTeam);
+        chessPieces[7, 0] = SpawnSinglePiece(TChessPiece.Rook, whiteTeam);
+        for (int x = 0; x < TILE_COUNT_X; x++)
+            chessPieces[x, 1] = SpawnSinglePiece(TChessPiece.Pawn, whiteTeam);
+      
+        // Black Pieces
+        chessPieces[0, 7] = SpawnSinglePiece(TChessPiece.Rook, blackTeam);
+        chessPieces[1, 7] = SpawnSinglePiece(TChessPiece.Knight, blackTeam);
+        chessPieces[2, 7] = SpawnSinglePiece(TChessPiece.Bishop, blackTeam);
+        chessPieces[3, 7] = SpawnSinglePiece(TChessPiece.Queen, blackTeam);
+        chessPieces[4, 7] = SpawnSinglePiece(TChessPiece.King, blackTeam);
+        chessPieces[5, 7] = SpawnSinglePiece(TChessPiece.Bishop, blackTeam);
+        chessPieces[6, 7] = SpawnSinglePiece(TChessPiece.Knight, blackTeam);
+        chessPieces[7, 7] = SpawnSinglePiece(TChessPiece.Rook, blackTeam);
+        for (int x = 0; x < TILE_COUNT_X; x++)
+            chessPieces[x, 6] = SpawnSinglePiece(TChessPiece.Pawn, blackTeam);
     }
     private ChessPiece SpawnSinglePiece(TChessPiece type, int team)
     {
@@ -307,6 +311,94 @@ public class ChessBoard : MonoBehaviour
     public void OnExitButton()
     {
         Application.Quit();
+    }
+
+    // Preventing Self Check moves and checking Checkmate
+    public void PreventCheck()
+    {
+        ChessPiece king = null;
+        for (int x = 0; x < TILE_COUNT_X; x++)
+        {
+            for (int y = 0; y < TILE_COUNT_Y; y++)
+            {
+                if (chessPieces[x, y] != null)
+                {
+                    // Find the King of the team which is currently playing
+                    if (chessPieces[x, y].type == TChessPiece.King && chessPieces[x, y].team == currentlyDragging.team)
+                    {
+                        king = chessPieces[x, y];
+                    }
+                }
+            }
+        }
+        SimulateMoveForSinglePiece(currentlyDragging, ref availableMoves, king);
+    }
+
+    private void SimulateMoveForSinglePiece(ChessPiece cp, ref List<Vector2Int> moves, ChessPiece targetKing)
+    {
+        // Save current Positions and initialize variables
+        int realX = cp.currentX;
+        int realY = cp.currentY;
+        List<Vector2Int> movesToRemove = new List<Vector2Int>();
+        Vector2Int kingPosition = new Vector2Int(targetKing.currentX, targetKing.currentY);
+        
+        // Simulate all the moves and check if the targetKing is checked
+
+        foreach (Vector2Int move in moves)
+        {
+            // Create Simulation Board
+            List<ChessPiece> enemyPieces = new List<ChessPiece>();
+            ChessPiece[,] simBoard = new ChessPiece[TILE_COUNT_X, TILE_COUNT_Y];
+            for (int x = 0; x < TILE_COUNT_X; x++)
+            {
+                for (int y = 0; y < TILE_COUNT_Y; y++)
+                {
+                    if (chessPieces[x, y] != null)
+                    {
+                        simBoard[x, y] = chessPieces[x, y];
+                        if (simBoard[x, y].team != cp.team)
+                        {
+                            enemyPieces.Add(simBoard[x, y]);
+                        }
+                    }
+                }
+            }
+            // Make the move in Simulation
+            simBoard[cp.currentX, cp.currentY] = null;
+            int simX = move.x;
+            int simY = move.y;
+            if (cp.type == TChessPiece.King)    // If the piece moved is the king change the King's position
+                kingPosition = new Vector2Int(simX, simY);
+            cp.currentX = simX;
+            cp.currentY = simY;
+            simBoard[cp.currentX, cp.currentY] = cp;
+            // If cp defeat an enemy piece remove it from the list
+            ChessPiece deadEnemyPiece = enemyPieces.Find(d => d.currentX == simX && d.currentY == simY);
+            if (deadEnemyPiece != null)
+                enemyPieces.Remove(deadEnemyPiece);
+
+            // Simulate over all the enemy pieces' moves and check if these moves contain the King's Position
+            foreach (ChessPiece enemy in enemyPieces)
+            {
+                List<Vector2Int> enemyMoves = enemy.GetAvailableMoves(ref simBoard, TILE_COUNT_X, TILE_COUNT_Y);
+
+                if (enemyMoves.Contains(kingPosition))
+                {
+                    movesToRemove.Add(move);
+                    break;
+                }
+            }
+
+            cp.currentX = realX;
+            cp.currentY = realY;
+        }
+
+        // Remove unvalid moves from moves list
+        for (int i = 0; i < movesToRemove.Count; i++)
+        {
+            moves.Remove(movesToRemove[i]);
+        }
+
     }
 
     // Special Move
