@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Networking.Transport;
 using UnityEngine;
 
 public enum TSpecialMove{
@@ -48,13 +49,20 @@ public class ChessBoard : MonoBehaviour
     private ChessPiece currentlyDragging;
     private bool isWhiteTurn;
 
-    private void Awake()
+    // Multiplayer Lpgic
+    private int playerCount = -1;
+    private int currentTeam = -1;
+    private bool localGame;
+
+    private void Start()
     {
         GenerateChessBoard(tileSize, TILE_COUNT_X, TILE_COUNT_Y);
 
         SpawnAllPieces();
         PositionAllPieces();
         isWhiteTurn = true;
+
+        RegisterEvents();
     }
 
     private void Update()
@@ -94,7 +102,7 @@ public class ChessBoard : MonoBehaviour
                 {
                     // If is it your turn
                     int teamTurn = isWhiteTurn ? 0 : 1;
-                    if (chessPieces[hitPosition.x, hitPosition.y].team == teamTurn)
+                    if (chessPieces[hitPosition.x, hitPosition.y].team == teamTurn && currentTeam == teamTurn)
                     {
                         currentlyDragging = chessPieces[hitPosition.x, hitPosition.y];
 
@@ -255,10 +263,6 @@ public class ChessBoard : MonoBehaviour
 
     }
 
-    private Vector3 GetCenterOfTile(int x, int y)
-    {
-        return new Vector3(x * tileSize, yOffset, y * tileSize) - bounds + new Vector3(tileSize / 2, 0, tileSize / 2);
-    }
 
     // CheckMate
     private void CheckMate(int team)
@@ -488,11 +492,8 @@ public class ChessBoard : MonoBehaviour
 
             if (allyPawnMove[1].x == enemyPawnMove[1].x)
             {
-                Debug.Log("Same X");
                 if (Mathf.Abs(allyPawnMove[1].y - enemyPawnMove[1].y) == 1)
                 {
-                    Debug.Log("Mathf.Abs(allyPawnMove[1].y - enemyPawnMove[1].y) == 1");
-
                     KillPiece(chessPieces[enemyPawnMove[1].x, enemyPawnMove[1].y]);
                 }
             }
@@ -532,6 +533,10 @@ public class ChessBoard : MonoBehaviour
 
         return false;
     } 
+    private Vector3 GetCenterOfTile(int x, int y)
+    {
+        return new Vector3(x * tileSize, yOffset, y * tileSize) - bounds + new Vector3(tileSize / 2, 0, tileSize / 2);
+    }
     private void HighlightTiles()
     {
         for (int i = 0; i < availableMoves.Count; i++)
@@ -573,6 +578,11 @@ public class ChessBoard : MonoBehaviour
             CheckMate(cp.team);
 
         isWhiteTurn = !isWhiteTurn;
+        if (localGame)
+        {
+            currentTeam = (currentTeam == 0) ? 1 : 0;
+            MenuUI.Instance.ChangeCamera((currentTeam == 0) ? CameraAngle.whiteTeam : CameraAngle.blackTeam);
+        }
 
         return true;
     }
@@ -602,4 +612,77 @@ public class ChessBoard : MonoBehaviour
                 new Vector3(0, 0, deadBlacks.Count * deathSpacing));
         }
     }
+
+    #region
+    private void RegisterEvents()
+    {
+        NetUtility.S_WELCOME += OnWelcomeServer;
+
+
+        NetUtility.C_WELCOME += OnWelcomeClient;
+        NetUtility.C_START_GAME += OnStartGameClient;
+
+        MenuUI.Instance.SetLocalGame += OnSetLocalGame;
+    }
+
+
+    private void UnRegisterEvents()
+    {
+        NetUtility.S_WELCOME -= OnWelcomeServer;
+
+
+        NetUtility.C_WELCOME -= OnWelcomeClient;
+        NetUtility.C_START_GAME -= OnStartGameClient;
+
+        MenuUI.Instance.SetLocalGame -= OnSetLocalGame;
+    }
+
+    // Server
+    private void OnWelcomeServer(NetMessage msg, NetworkConnection cnn)
+    {
+
+        // Client has connected, assign a team and return the message back to him
+        NetWelcome nw = msg as NetWelcome;
+
+        // Assigne a team
+        nw.AssignedTeam = ++playerCount; 
+
+        // Return back to the client
+        Server.Instance.SendToClient(cnn, nw);
+
+
+        // If full, start the game
+        if (playerCount == 1)
+            Server.Instance.Broadcast(new NetStartGame());
+
+    }
+
+
+    // Client
+    private void OnWelcomeClient(NetMessage msg)
+    {
+        // Receive the connection message
+        NetWelcome nw = msg as NetWelcome;
+
+        // Assign the team
+        currentTeam = nw.AssignedTeam;
+        Debug.Log("Current Team is: " + currentTeam);
+
+        if (localGame == true && currentTeam == 0)
+            Server.Instance.Broadcast(new NetStartGame());
+    }
+    private void OnStartGameClient(NetMessage obj)
+    {
+        // We just need to change the camera bec game is already working in bg
+        MenuUI.Instance.ChangeCamera((currentTeam == 0) ? CameraAngle.whiteTeam : CameraAngle.blackTeam);
+    }
+
+    //
+    private void OnSetLocalGame(bool isLocalGame)
+    {
+        localGame = isLocalGame;
+    }
+
+    #endregion
+
 }

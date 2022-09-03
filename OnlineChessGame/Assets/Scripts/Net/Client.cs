@@ -45,7 +45,6 @@ public class Client : MonoBehaviour
         Shutdown();
     }
 
-
     public void Update()
     {
         if (!isActive)
@@ -74,7 +73,7 @@ public class Client : MonoBehaviour
         {
             if (cmd == NetworkEvent.Type.Connect)
             {
-                //SendToServer(new NetWelcome());
+                SendToServer(new NetWelcome());
                 Debug.Log("We are Connected");
             }
             else if (cmd == NetworkEvent.Type.Data)
@@ -90,7 +89,6 @@ public class Client : MonoBehaviour
             }
         }
     }
-
     public void SendToServer(NetMessage msg)
     {
         DataStreamWriter writer;
@@ -113,9 +111,5 @@ public class Client : MonoBehaviour
         // Send it back, to keep borh side alive
         SendToServer(nm);
     }
-
-
-
-
 
 }

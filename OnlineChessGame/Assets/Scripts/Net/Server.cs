@@ -56,7 +56,6 @@ public class Server : MonoBehaviour
         Shutdown();
     }
 
-
     public void Update()
     {
         if (!isActive)
@@ -64,7 +63,7 @@ public class Server : MonoBehaviour
             return;
         }
 
-     //   KeepAlive();
+        KeepAlive();
 
         driver.ScheduleUpdate().Complete();
 
@@ -73,7 +72,14 @@ public class Server : MonoBehaviour
         UpdateMessagePump();
 
     }
-
+    private void KeepAlive()
+    {
+        if (Time.time - lastKeepAlive > keepAliveTickRate)
+        {
+            lastKeepAlive = Time.time;
+            Broadcast(new NetKeepAlive());
+        }
+    }
     private void CleanupConnections()
     {
         for (int i = 0; i < connections.Length; i++)
@@ -85,7 +91,6 @@ public class Server : MonoBehaviour
             }
         }
     }
-
     private void AcceptNewConnections()
     {
         NetworkConnection c;
@@ -94,7 +99,6 @@ public class Server : MonoBehaviour
             connections.Add(c);
         }
     }
-
     private void UpdateMessagePump()
     {
         DataStreamReader stream;
@@ -105,7 +109,7 @@ public class Server : MonoBehaviour
             {
                 if (cmd == NetworkEvent.Type.Data)
                 {
-                //    NetUtility.OnData(stream, connections[i], this);
+                    NetUtility.OnData(stream, connections[i], this);
                 }
                 else if(cmd == NetworkEvent.Type.Disconnect)
                 {
@@ -123,14 +127,14 @@ public class Server : MonoBehaviour
     {
         DataStreamWriter writer;
         driver.BeginSend(connection, out writer);
-    //    msg.Serialize(ref writer);
+        msg.Serialize(ref writer);
         driver.EndSend(writer);
     }
     public void Broadcast(NetMessage msg)
     {
         for (int i = 0; i < connections.Length; i++)
         {
-         //   Debug.Log($"Sending {msg.Code} to : {connections[i].InternalId}");
+            //Debug.Log($"Sending {msg.Code} to : {connections[i].InternalId}");
             SendToClient(connections[i], msg);
         }
     }
